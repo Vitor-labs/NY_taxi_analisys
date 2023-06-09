@@ -4,7 +4,7 @@
 
 <u>Conceitos Envolvidos:</u>
 - Envio de dados utilizando Sockets TCP e Datagrama UDP
-- Protocolo Requisição/Resposta. Especificação e implementação realizada por vocês
+- Protocolo Requisição/Resposta.
 - Representação externa de dados. JSON e Protocol Buffers
 - Comunicação por filas
   
