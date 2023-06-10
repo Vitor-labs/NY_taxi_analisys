@@ -10,7 +10,11 @@
   
 <u>Arquitetura:</u>
 
-<img alt="arquitetura da aplicação distribuida" align="center" src="arctecture.drawio.svg">
+- Aplicação
+<img alt="arquitetura da aplicação distribuida" align="center" src="assets/arctecture.drawio.svg">
+
+- Dados
+<img alt="arquitetura dos dados" align="center" src="assets/data_models.drawio.svg">
 
 <u>Requisitos Não-Funcionais:</u>
 
