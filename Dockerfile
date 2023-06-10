@@ -5,6 +5,6 @@ RUN pip install pandas sqlalchemy psycopg2 fastparquet
 
 WORKDIR /APP
 
-COPY ny_taxi_data_etl.py ny_taxi_data_etl.py
+COPY extract.py extract.py
 
-ENTRYPOINT [ "python", "ny_taxi_data_etl.py" ]
+ENTRYPOINT [ "python", "extract.py" ]
