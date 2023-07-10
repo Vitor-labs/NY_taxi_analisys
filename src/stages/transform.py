@@ -1,7 +1,30 @@
-import psycopg2
-import pandas as pd
+#import pandas as pd
+
+from kafka import KafkaConsumer
 
 
+def consume_dataset(topic:str = 'trips_data'):
+    """
+    Consumes the queue data to transform
+
+    Args:
+        topic (str, optional): Defaults to 'trips_data'.
+    """
+    consumer = KafkaConsumer(
+        topic,
+        bootstrap_servers='localhost:9092',
+        group_id='my_consumer_group'
+    )
+
+    for message in consumer:
+        chunk = message.value
+        print(f"Received chunk: {chunk}")
+
+    consumer.close()
+
+consume_dataset()
+
+"""
 conn_params = {
     "host": "localhost",
     "database": "ny_taxi",
@@ -113,3 +136,4 @@ fact_table = df.merge(passenger_count_dim, on='passenger_count') \
                'trip_distance_id', 'rate_code_id', 'store_and_fwd_flag', 'pickup_location_id', 'dropoff_location_id',
                'payment_type_id', 'fare_amount', 'extra', 'mta_tax', 'tip_amount', 'tolls_amount',
                'improvement_surcharge', 'total_amount', 'congestion_surcharge', 'airport_fee']]
+"""
