@@ -3,10 +3,9 @@
 ##  <center> **Definição do sistema** </center>
 
 ### <u>Conceitos Envolvidos:</u>
-- Envio de dados utilizando Sockets TCP e Datagrama UDP
-- Protocolo Requisição/Resposta.
-- Representação externa de dados. JSON e Protocol Buffers
-- Comunicação por filas: implantar Apache Kafka
+- Envio de dados utilizando Kafka Streams.
+- Representação externa de dados via JSON.
+- Comunicação por filas.
   
 ### <u>Arquitetura:</u>
 
@@ -20,39 +19,28 @@
 
 ### <u>Requisitos Não-Funcionais:</u>
 
-**[ ]** Privacidade: criptografia nas transmições de dados e requests
+**[X]** Privacidade: Criptografia nas transmições de dados e requests, Manuseio de segredos com Vault
 
-**[ ]** Confiabilidade: implementações da GCP / estado das filas com Apache Kafka
+**[X]** Confiabilidade: estado das filas com Apache Kafka
 
-**[ X ]** Escalabilidade: implementações da GCP
+**[ ]** Escalabilidade: 
 
 ----
 ## <center> **Como Executar este Projeto** </center>
 
-1. Crie uma rede no Docker
+1. Suba a instancia do docker compose
 ```sh
-docker network create pg-network
+docker-compose -f docker-compose.yml up -d
 ```
-2. Construa a imagem do docker
+2. Execute o kafka internamente
 ```sh
-docker build -t <container_name> .
+docker exec -it kafka /bin/sh
 ```
-3. Execute a imagem
+3. Go inside kafka installation folder
 ```sh
-docker run -it --network=pg-network data_ingest:v001 --u=root --pw=root --h=localhost --p=5432 --db=ny_taxi --t=yellow_taxi_data --U={url}
+cd /opt/kafka_<version>/bin
 ```
-
-## Apresentação
-
-- Descrição do sistema a ser implementado:
-  - Sistema de Coleta, Transformação e Visualização de dados de viagens de taxi amarelo da cidade de nova yorke
-
-- Como vocês pretendem implementar os seguintes módulos: 
-  - comunicação (tcp, udp, filas): via Apache Kafka
-  - representacao externa de dados (json, protocol buffer): Json
-  - protocolo requisição-resposta (já mostrar a especificação do protocolo e como ele está até o momento)
-
-- Quais requisitos não-funcionais vocês pretendem implementar
-
-- Uma arquitetura inicial do sistema a ser construído
-  - Já definida
+4. Create Kafka topic
+```sh
+kafka-topics.sh --create --zookeeper zookeeper:2181 --replication-factor 1 --partitions 1 --topic <TOPIC-NAME>
+```

@@ -1,7 +1,11 @@
-#import pandas as pd
+import pandas as pd
 
 from kafka import KafkaConsumer
 
+
+def format_tables(value):
+    df = pd.DataFrame(value)
+    ...
 
 def consume_dataset(topic:str = 'trips_data'):
     """
@@ -18,7 +22,9 @@ def consume_dataset(topic:str = 'trips_data'):
 
     for message in consumer:
         chunk = message.value
-        print(f"Received chunk: {chunk}")
+        format_tables(chunk)
+
+        print(f"Received chunk: {chunk}\n")
 
     consumer.close()
 

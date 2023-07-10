@@ -2,13 +2,18 @@
 ETL Flow to extract taxi data and upload send it to the 
 consumer for futher transformation
 """
-from kafka import KafkaProducer
 from time import time
+from kafka import KafkaProducer
+
+import pyarrow.parquet as pq
+import pandas as pd
 
 import requests
+import tempfile
+import os
 
 
-BATCH_SIZE = 10000
+BATCH_SIZE = 2048
 DATA_URL = "https://d37ci6vzurychx.cloudfront.net/trip-data/yellow_tripdata_2023-01.parquet"
 
 
@@ -28,20 +33,33 @@ def download_dataset(
     """
     producer = KafkaProducer(bootstrap_servers='localhost:9092')
 
-    response = requests.get(url, stream=True)
-    response.raise_for_status()
+    trips = pd.read_parquet(url)
+    total_rows = len(trips)
+    num_batches = total_rows // batch_size + 1
 
-    print('Enviados Chunks para o tópico: ', topic)
     start = time()
-    
-    for chunk in response.iter_content(chunk_size=batch_size):
-        print('sending')
-        producer.send(topic, chunk)
+
+    print('Sending Chunks to: ', topic)
+
+    for i in range(num_batches):
+        t_start = time()
+        start = i * batch_size
+        end = min((i + 1) * batch_size, total_rows)
+
+        chunk = trips.iloc[start:end]
+        json_data = chunk.to_json(orient='records')
+
+        print('sending to...', end)
+        producer.send(topic, json_data.encode('utf-8'))
+
+        t_end = time()
+
+        print(f'...Inserted {end} lines, took {t_end - t_start}s')
+
+    final = time()
+    print(f'Done. Process time: {final - start} seconds')
 
     producer.flush()
-
-    end = time()
-    print(f'Chunks enviados com sucesso para o tópico: { topic } | Tempo: {end - start}' )
-
+    producer.close()
 
 download_dataset()
