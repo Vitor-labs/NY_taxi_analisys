@@ -44,3 +44,4 @@ cd /opt/kafka_<version>/bin
 ```sh
 kafka-topics.sh --create --zookeeper zookeeper:2181 --replication-factor 1 --partitions 1 --topic <TOPIC-NAME>
 ```
+5. With the topic created, execute the main script
