@@ -52,12 +52,11 @@ def download_dataset(
         print('sending to...', end)
         producer.send(topic, json_data.encode('utf-8'))
 
-        t_end = time()
+        print(f'...Inserted {end} lines')
+        break
 
-        print(f'...Inserted {end} lines, took {t_end - t_start}s')
-
-    final = time()
-    print(f'Done. Process time: {final - start} seconds')
+    t_end = time()
+    print(f'Done. Process time: {t_end - t_start} seconds')
 
     producer.flush()
     producer.close()
