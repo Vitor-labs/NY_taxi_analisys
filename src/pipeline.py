@@ -7,6 +7,7 @@ import hvac
 
 from stages.extract import download_dataset
 from stages.transform import consume_dataset
+from stages.load import load_on_database
 
 class Pipeline:
     """
@@ -21,8 +22,8 @@ class Pipeline:
 
         download_dataset()
         consume_dataset()
+        load_on_database()
         
-
 
 if __name__ == '__main__':
     parser = ArgumentParser(description='Taxi data here')
