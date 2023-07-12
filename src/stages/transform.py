@@ -6,7 +6,14 @@ import pandas as pd
 from kafka import KafkaConsumer
 
 
-df = pd.DataFrame()
+df = pd.DataFrame(columns=['VendorID','tpep_pickup_datetime',
+                           'tpep_dropoff_datetime','passenger_count'
+                           'trip_distance','pickup_longitude',
+                           'pickup_latitude','RatecodeID',
+                           'store_and_fwd_flag','dropoff_longitude',
+                           'dropoff_latitude','payment_type','fare_amount',
+                           'extra','mta_tax','tip_amount','tolls_amount',
+                           'improvement_surcharge','total_amount','trip_id'])
 
 def consume_dataset(topic:str = 'trips_data'):
     """
@@ -26,11 +33,14 @@ def consume_dataset(topic:str = 'trips_data'):
     for message in consumer:
         chunk = message.value
         json_df = pd.read_json(chunk, orient='records')
-        df = pd.concat([df, json_df], ignore_index=True)
-
+        formated_df = process_dataset(json_df)
+        formated_df = pd.concat([formated_df, json_df], ignore_index=True)
+    
     consumer.close()
 
-consume_dataset()
+    load_dataset() # sends data to GCP Big Query
+
+consume_dataset() # remove
 
 def process_dataset():
     """
@@ -116,7 +126,8 @@ def process_dataset():
     pickup_location_dim = pickup_location_dim.rename(columns={'LocationID':'PULocationID'})
 
     dropoff_location_dim = pd.DataFrame()
-    dropoff_location_dim['LocationID'] = df[['DOLocationID']].drop_duplicates().reset_index(drop=True)
+    dropoff_location_dim['LocationID'] = df[['DOLocationID']] \
+        .drop_duplicates().reset_index(drop=True)
     dropoff_location_dim['dropoff_location_id'] = dropoff_location_dim.index
     dropoff_location_dim = pd.merge(dropoff_location_dim, df_locations, on='LocationID')
     dropoff_location_dim = dropoff_location_dim.rename(columns={'LocationID':'DOLocationID'})
@@ -129,7 +140,12 @@ def process_dataset():
                 .merge(datetime_dim, on=['tpep_pickup_datetime','tpep_dropoff_datetime']) \
                 .merge(payment_type_dim, on='payment_type') \
                 [['VendorID', 'datetime_id', 'passenger_count_id',
-                'trip_distance_id', 'rate_code_id', 'store_and_fwd_flag', 'pickup_location_id', 'dropoff_location_id',
-                'payment_type_id', 'fare_amount', 'extra', 'mta_tax', 'tip_amount', 'tolls_amount',
-                'improvement_surcharge', 'total_amount', 'congestion_surcharge', 'airport_fee']]
+                'trip_distance_id', 'rate_code_id', 'store_and_fwd_flag', 'pickup_location_id', 
+                'dropoff_location_id', 'payment_type_id', 'ffare_amount', 'extra', 'mta_tax', 
+                'tip_amount', 'tolls_amount', 'improvement_surcharge', 'total_amount',
+                'congestion_surcharge', 'airport_fee']]
 
+    fact_table.to_csv('trips.csv') # Send to Cloud Storage
+
+def load_dataset():
+    

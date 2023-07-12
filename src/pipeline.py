@@ -2,25 +2,22 @@
 Module Docstring
 """
 from argparse import ArgumentParser
-from .stages.extract import download_dataset
+
+import hvac
+
+from stages.extract import download_dataset
+from stages.transform import consume_dataset#, process_dataset
 
 class Pipeline:
     """
     Main class to run the pipeline
     """
     @classmethod
-    def run(cls, params: ArgumentParser) -> None:
-        args = {}
-
-        args['user']     =  params.u
-        args['password'] = params.pw
-        args['host']     =  params.h
-        args['port']     =  params.p
-        args['database'] = params.db
-        args['table']    =  params.t
-        args['url']      =  params.U
-
-        download_dataset()
+    def run(cls) -> None:
+        """
+        Main Process
+        """
+        print("Running main pipeline")
 
 
 if __name__ == '__main__':
@@ -33,5 +30,22 @@ if __name__ == '__main__':
     parser.add_argument('--db', help='database name')
     parser.add_argument('--t', help='table name in database')
     parser.add_argument('--U', help='url link to acess data file')
+    parser.add_argument('--v', help='IP for vault server')
+    #python pipeline.py --u=root --pw=root --h=pg-database --p=5432 --db=ny_taxi --t=yellow_taxi_data --U=${URL} --v=http://127.0.0.1:8200
 
-    Pipeline.run(parser.parse_args())
+    client = hvac.Client(url='http://localhost:8200')
+    if client.is_authenticated():
+        client.secrets.kv.v2.create_or_update_secret(path='user', secret=dict(sec=parser.u))
+        client.secrets.kv.v2.create_or_update_secret(path='password', secret=dict(sec=parser.pw))
+        client.secrets.kv.v2.create_or_update_secret(path='host', secret=dict(sec=parser.h))
+        client.secrets.kv.v2.create_or_update_secret(path='port', secret=dict(sec=parser.p))
+        client.secrets.kv.v2.create_or_update_secret(path='database', secret=dict(sec=parser.db))
+        client.secrets.kv.v2.create_or_update_secret(path='table', secret=dict(sec=parser.t))
+        client.secrets.kv.v2.create_or_update_secret(path='url', secret=dict(sec=parser.U))
+        client.secrets.kv.v2.create_or_update_secret(path='vault', secret=dict(sec=parser.v))
+        
+        print('Secrets Added')
+
+        Pipeline.run()
+    else:
+        raise Exception('Vault not authentificated')  

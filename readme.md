@@ -38,10 +38,17 @@ docker exec -it kafka /bin/sh
 ```
 3. Go inside kafka installation folder
 ```sh
-cd /opt/kafka_<version>/bin
+cd /opt/kafka_2.13-2.8.1/bin
 ```
 4. Create Kafka topic
 ```sh
-kafka-topics.sh --create --zookeeper zookeeper:2181 --replication-factor 1 --partitions 1 --topic <TOPIC-NAME>
+kafka-topics.sh --create --zookeeper zookeeper:2181 --replication-factor 1 --partitions 1 --topic trips_data
 ```
-5. With the topic created, execute the main script
+5. With the topic created, build the docker image
+```sh
+docker build -t your-image-name .
+```
+6. Run it
+```sh
+docker run your-image-name
+```

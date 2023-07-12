@@ -5,22 +5,21 @@ consumer for futher transformation
 from time import time
 from kafka import KafkaProducer
 
-import pyarrow.parquet as pq
 import pandas as pd
-
-import requests
-import tempfile
-import os
+import hvac
 
 
-BATCH_SIZE = 2048
-DATA_URL = "https://d37ci6vzurychx.cloudfront.net/trip-data/yellow_tripdata_2023-01.parquet"
+client = hvac.Client(url='http://localhost:8200')
+
+BATCH_SIZE = 10000 # not modify
+DATA_URL = client.secrets.kv.v2.read_secret_version(path='url')
+TOPIC = 'trips_data'
 
 
 def download_dataset(
-        url:str = DATA_URL, 
-        batch_size:int = BATCH_SIZE, 
-        topic:str = 'trips_data'
+        url:str = DATA_URL,
+        batch_size:int = BATCH_SIZE,
+        topic:str = TOPIC
         ):
     """
     Downloads the trips dataset by chunks and sends then to
@@ -37,28 +36,24 @@ def download_dataset(
     total_rows = len(trips)
     num_batches = total_rows // batch_size + 1
 
+    if producer.bootstrap_connected():
+        print('Sending Chunks to:', topic)
+
     start = time()
 
-    print('Sending Chunks to: ', topic)
-
     for i in range(num_batches):
-        t_start = time()
         start = i * batch_size
         end = min((i + 1) * batch_size, total_rows)
 
         chunk = trips.iloc[start:end]
         json_data = chunk.to_json(orient='records')
 
-        print('sending to...', end)
-        producer.send(topic, json_data.encode('utf-8'))
+        producer.send(topic=topic, value=json_data.encode('utf-8'))
 
-        print(f'...Inserted {end} lines')
-        break
-
-    t_end = time()
-    print(f'Done. Process time: {t_end - t_start} seconds')
+    end = time()
+    print(f'Done. Process time: {end - start} seconds')
 
     producer.flush()
     producer.close()
 
-download_dataset()
+download_dataset() #remove
