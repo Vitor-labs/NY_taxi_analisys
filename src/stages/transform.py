@@ -3,17 +3,8 @@ Module Docstring
 """
 import pandas as pd
 
-from kafka import KafkaConsumer
+from kafka import KafkaConsumer, KafkaProducer
 
-
-df = pd.DataFrame(columns=['VendorID','tpep_pickup_datetime',
-                           'tpep_dropoff_datetime','passenger_count'
-                           'trip_distance','pickup_longitude',
-                           'pickup_latitude','RatecodeID',
-                           'store_and_fwd_flag','dropoff_longitude',
-                           'dropoff_latitude','payment_type','fare_amount',
-                           'extra','mta_tax','tip_amount','tolls_amount',
-                           'improvement_surcharge','total_amount','trip_id'])
 
 def consume_dataset(topic:str = 'trips_data'):
     """
@@ -28,21 +19,23 @@ def consume_dataset(topic:str = 'trips_data'):
         group_id='my_consumer_group',
         value_deserializer=lambda x: x.decode('utf-8')
     )
+
     print('Listening...')
 
     for message in consumer:
         chunk = message.value
         json_df = pd.read_json(chunk, orient='records')
+        
         formated_df = process_dataset(json_df)
         formated_df = pd.concat([formated_df, json_df], ignore_index=True)
-    
-    consumer.close()
 
-    load_dataset() # sends data to GCP Big Query
+        load_dataset(formated_df) # sends data to GCP Big Query
+
+    consumer.close()
 
 consume_dataset() # remove
 
-def process_dataset():
+def process_dataset(df: pd.DataFrame) -> pd.DataFrame:
     """
     Process each column from dataset to make the fact_table
     and other dimensional tables
@@ -145,7 +138,19 @@ def process_dataset():
                 'tip_amount', 'tolls_amount', 'improvement_surcharge', 'total_amount',
                 'congestion_surcharge', 'airport_fee']]
 
-    fact_table.to_csv('trips.csv') # Send to Cloud Storage
+    return fact_table
 
-def load_dataset():
-    
+def load_dataset(fact_table: pd.DataFrame) -> None:
+    """
+    Send data already procesed to the load step, to be
+    sended to big query
+    """
+    producer = KafkaProducer(bootstrap_servers='localhost:9092')
+
+    for _, row in fact_table.iterrows():
+        row_dict = row.to_dict()
+
+        producer.send('fact_table', value=str(row_dict).encode('utf-8'))
+
+    producer.flush()
+    producer.close()
