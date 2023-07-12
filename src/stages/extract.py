@@ -10,11 +10,11 @@ import hvac
 
 
 client = hvac.Client(url='http://localhost:8200')
+read_response = client.secrets.kv.v2.read_secret_version(path='url')
 
 BATCH_SIZE = 10000 # not modify
-DATA_URL = client.secrets.kv.v2.read_secret_version(path='url')
+DATA_URL = read_response['data']['data']['url']
 TOPIC = 'trips_data'
-
 
 def download_dataset(
         url:str = DATA_URL,

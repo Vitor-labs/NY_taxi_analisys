@@ -6,7 +6,7 @@ from argparse import ArgumentParser
 import hvac
 
 from stages.extract import download_dataset
-from stages.transform import consume_dataset#, process_dataset
+from stages.transform import consume_dataset
 
 class Pipeline:
     """
@@ -18,6 +18,10 @@ class Pipeline:
         Main Process
         """
         print("Running main pipeline")
+
+        download_dataset()
+        consume_dataset()
+        
 
 
 if __name__ == '__main__':

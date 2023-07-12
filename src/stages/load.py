@@ -1,42 +1,37 @@
-from typing import Dict
-from time import time
+from kafka import KafkaConsumer
 from sqlalchemy import create_engine
+import hvac
 
-import psycopg2
+client = hvac.Client(url='http://localhost:8200')
+read_user_response = client.secrets.kv.v2.read_secret_version(path='db')
+read_password_response = client.secrets.kv.v2.read_secret_version(path='db')
+read_host_response = client.secrets.kv.v2.read_secret_version(path='db')
+read_port_response = client.secrets.kv.v2.read_secret_version(path='db')
+read_database_response = client.secrets.kv.v2.read_secret_version(path='db')
+read_table_response = client.secrets.kv.v2.read_secret_version(path='db')
 
-def main(params: Dict) -> None:
-    user     =  params['user']
-    password = params['password']
-    host     =  params['host']
-    port     =  params['port']
-    database = params['database']
-    table    =  params['table']
-    url      =  params['url']
+bootstrap_servers = 'localhost:9092'
+topic = 'trips_data'
+
+user = read_user_response['data']['data']['user']
+password = read_password_response['data']['data']['password']
+host = read_host_response['data']['data']['host']
+port = read_port_response['data']['data']['port']
+database = read_database_response['data']['data']['database']
+table = read_table_response['data']['data']['table']
+
+consumer = KafkaConsumer(topic,
+                         bootstrap_servers=bootstrap_servers,
+                         )
+
+DB_URL = f'postgresql://{user}:{password}@{host}:{port}/{database}'
+engine = create_engine(DB_URL)
+engine.connect()
+
+for message in consumer:
+    message_value = message.value.decode('utf-8')
+    columns = message_value.split(',')
     
-    DB_URL = f'postgresql://{user}:{password}@{host}:{port}/{database}'
+    # Finish the loading
 
-    trips = pd.read_parquet(url)
-
-    engine = create_engine(DB_URL)
-    engine.connect()
-
-    print(pd.io.sql.get_schema(trips, name=table, con=engine))
-
-    trips.head(n=0).to_sql(name=table, con=engine, if_exists='replace')
-
-    total_rows = len(trips)
-    num_batches = total_rows // BATCH_SIZE + 1
-
-    print("Inserting chuncks...")
-    for i in range(num_batches):
-        t_start = time()
-        start = i * BATCH_SIZE
-        end = min((i + 1) * BATCH_SIZE, total_rows)
-
-        batch_data = trips.iloc[start:end]
-
-        batch_data.to_sql(name=table, con=engine, if_exists='append')
-        t_end = time()
-
-        print(f'...Inserted {end} lines, took {t_end - t_start}s')
-
+consumer.close()
